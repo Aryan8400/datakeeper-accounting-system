@@ -9,9 +9,9 @@ const styles = {
     "border-emerald-200 bg-emerald-50 text-emerald-900 dark:border-emerald-800/50 dark:bg-emerald-950/40 dark:text-emerald-200",
 };
 
-export default function Alert({ children, variant = "info", onClose }) {
+export default function Alert({ children, variant = "info", onClose, className = "" }) {
   return (
-    <div className={`flex items-start gap-3 rounded-xl border px-4 py-3 text-sm ${styles[variant]}`}>
+    <div className={`flex items-start gap-3 rounded-xl border px-4 py-3 text-sm ${styles[variant]} ${className}`}>
       <div className="flex-1">{children}</div>
       {onClose && (
         <button type="button" onClick={onClose} className="shrink-0 opacity-60 hover:opacity-100">

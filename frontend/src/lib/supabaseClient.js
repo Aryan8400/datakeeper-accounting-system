@@ -1,9 +1,14 @@
 import { createClient } from "@supabase/supabase-js";
 
-// Replace with your project URL from: Supabase Dashboard → Project Settings → API
-const SUPABASE_URL = "{{SUPABASE_URL}}";
+// Get credentials from environment variables
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-// Replace with your anon/public key from: Supabase Dashboard → Project Settings → API
-const SUPABASE_PUBLIC_KEY = "{{SUPABASE_KEY}}";
+// Validate that credentials are provided
+if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+  console.error(
+    "Missing Supabase credentials. Please add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY to .env.local"
+  );
+}
 
-export const supabase = createClient(SUPABASE_URL, SUPABASE_PUBLIC_KEY);
+export const supabase = createClient(SUPABASE_URL || "", SUPABASE_ANON_KEY || "");

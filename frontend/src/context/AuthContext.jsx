@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect, useCallback } from "react";
-import { storage } from "../services/storageService.js";
+import { signIn, signUp, signOut, getCurrentSession } from "../services/supabaseService.js";
+import { supabase } from "../lib/supabaseClient.js";
 
 const AuthContext = createContext(null);
 
@@ -8,58 +9,110 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Seed demo account for first-time users (remove when Supabase is connected)
-    const users = storage.getUsers([]);
-    if (users.length === 0) {
-      storage.setUsers([
-        {
-          id: "demo-user",
-          name: "Jay Durge",
-          email: "demo@jaydurgetraders.com",
-          password: "demo123",
-          createdAt: new Date().toISOString(),
-        },
-      ]);
-    }
-    const session = storage.getSession();
-    setUser(session);
-    setLoading(false);
-  }, []);
-
-  const login = useCallback((email, password) => {
-    const users = storage.getUsers([]);
-    const found = users.find(
-      (u) => u.email.toLowerCase() === email.toLowerCase() && u.password === password
-    );
-    if (!found) throw new Error("Invalid email or password.");
-    const session = { id: found.id, name: found.name, email: found.email };
-    storage.setSession(session);
-    setUser(session);
-    return session;
-  }, []);
-
-  const signup = useCallback(({ name, email, password }) => {
-    const users = storage.getUsers([]);
-    if (users.some((u) => u.email.toLowerCase() === email.toLowerCase())) {
-      throw new Error("An account with this email already exists.");
-    }
-    const newUser = {
-      id: `user-${Date.now()}`,
-      name,
-      email,
-      password,
-      createdAt: new Date().toISOString(),
+    const handleSessionFromUrl = async () => {
+      if (typeof window === "undefined") return;
+      const url = window.location.href;
+      if (url.includes("access_token") || url.includes("type=") || url.includes("refresh_token")) {
+        try {
+          const { data, error } = await supabase.auth.getSessionFromUrl({ storeSession: true });
+          if (error) {
+            console.error("Auth callback error:", error);
+            return;
+          }
+          if (data?.session?.user) {
+            setUser({
+              id: data.session.user.id,
+              name: data.session.user.user_metadata?.name || data.session.user.email,
+              email: data.session.user.email,
+            });
+          }
+          window.history.replaceState({}, document.title, window.location.pathname);
+        } catch (err) {
+          console.error("Failed to process auth callback:", err);
+        }
+      }
     };
-    storage.setUsers([...users, newUser]);
-    const session = { id: newUser.id, name: newUser.name, email: newUser.email };
-    storage.setSession(session);
-    setUser(session);
-    return session;
+
+    const checkSession = async () => {
+      try {
+        await handleSessionFromUrl();
+        const session = await getCurrentSession();
+        if (session?.user) {
+          setUser({
+            id: session.user.id,
+            name: session.user.user_metadata?.name || session.user.email,
+            email: session.user.email,
+          });
+        }
+      } catch (err) {
+        console.error("Failed to check session:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    checkSession();
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (session?.user) {
+        setUser({
+          id: session.user.id,
+          name: session.user.user_metadata?.name || session.user.email,
+          email: session.user.email,
+        });
+      } else {
+        setUser(null);
+      }
+    });
+
+    return () => {
+      subscription?.unsubscribe();
+    };
   }, []);
 
-  const logout = useCallback(() => {
-    storage.clearSession();
-    setUser(null);
+  const login = useCallback(async (email, password) => {
+    try {
+      const { session } = await signIn(email, password);
+      if (session?.user) {
+        const userData = {
+          id: session.user.id,
+          name: session.user.user_metadata?.name || session.user.email,
+          email: session.user.email,
+        };
+        setUser(userData);
+        return userData;
+      }
+    } catch (err) {
+      throw new Error(err.message || "Invalid email or password.");
+    }
+  }, []);
+
+  const signup = useCallback(async ({ name, email, password }) => {
+    try {
+      const { user: newUser } = await signUp({ email, password, name });
+      if (newUser) {
+        const userData = {
+          id: newUser.id,
+          name: name,
+          email: email,
+        };
+        setUser(userData);
+        return userData;
+      }
+    } catch (err) {
+      throw new Error(err.message || "Failed to create account.");
+    }
+  }, []);
+
+  const logout = useCallback(async () => {
+    try {
+      await signOut();
+      setUser(null);
+    } catch (err) {
+      console.error("Logout error:", err);
+    }
   }, []);
 
   return (

@@ -58,9 +58,16 @@ export default function StockPage() {
     }
   }
 
-  function handleDelete(id) {
-    if (window.confirm("Delete this material? This cannot be undone.")) {
-      deleteMaterial(id);
+  async function handleDelete(id) {
+    if (!window.confirm("Delete this material? This cannot be undone.")) {
+      return;
+    }
+
+    try {
+      await deleteMaterial(id);
+      setError("");
+    } catch (err) {
+      setError(err.message || "Failed to delete material.");
     }
   }
 
@@ -73,6 +80,12 @@ export default function StockPage() {
           <Button onClick={openAdd}>+ Add Material</Button>
         }
       />
+
+      {error && !modalOpen && (
+        <Alert variant="danger" className="mb-6">
+          {error}
+        </Alert>
+      )}
 
       {lowStockCount > 0 && (
         <Alert variant="warning" className="mb-6">
@@ -102,16 +115,29 @@ export default function StockPage() {
                     <button
                       type="button"
                       onClick={() => openEdit(m)}
-                      className="rounded-lg px-2 py-1 text-xs font-medium text-brand-600 hover:bg-brand-50 dark:hover:bg-brand-950"
+                      title="Edit material"
+                      aria-label="Edit material"
+                      className="rounded-lg p-2 text-brand-600 hover:bg-brand-50 dark:hover:bg-brand-950"
                     >
-                      Edit
+                      <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M12 20h9" />
+                        <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z" />
+                      </svg>
                     </button>
                     <button
                       type="button"
                       onClick={() => handleDelete(m.id)}
-                      className="rounded-lg px-2 py-1 text-xs font-medium text-red-600 hover:bg-red-50 dark:hover:bg-red-950"
+                      title="Delete material"
+                      aria-label="Delete material"
+                      className="rounded-lg p-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-950"
                     >
-                      Delete
+                      <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M3 6h18" />
+                        <path d="M8 6V4h8v2" />
+                        <path d="M19 6l-1 14H6L5 6" />
+                        <path d="M10 11v6" />
+                        <path d="M14 11v6" />
+                      </svg>
                     </button>
                   </div>
                 </div>

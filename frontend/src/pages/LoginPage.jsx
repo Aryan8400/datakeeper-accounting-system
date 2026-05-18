@@ -18,8 +18,10 @@ export default function LoginPage() {
     setError("");
     setLoading(true);
     try {
-      login(email, password);
-      navigate("/dashboard");
+      const userData = await login(email, password);
+      if (userData) {
+        navigate("/dashboard");
+      }
     } catch (err) {
       setError(err.message);
     } finally {

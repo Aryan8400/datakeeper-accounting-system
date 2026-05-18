@@ -29,8 +29,12 @@ export default function SignupPage() {
     }
     setLoading(true);
     try {
-      signup({ name: form.name, email: form.email, password: form.password });
-      navigate("/dashboard");
+      const userData = await signup({ name: form.name, email: form.email, password: form.password });
+      if (userData) {
+        navigate("/dashboard");
+      } else {
+        setError("A confirmation email has been sent. Please check your inbox and follow the link to complete registration.");
+      }
     } catch (err) {
       setError(err.message);
     } finally {
