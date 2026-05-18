@@ -22,11 +22,15 @@ export function calcProfit(quantityKg, sellingRate, purchasePrice) {
 
 /** Stock status helpers */
 export function isLowStock(currentKg, initialKg) {
-  if (!initialKg || initialKg <= 0) return false;
-  return currentKg < initialKg * LOW_STOCK_THRESHOLD;
+  const current = Number(currentKg) || 0;
+  const initial = Number(initialKg) || 0;
+  if (initial <= 0) return false;
+  return current <= initial * LOW_STOCK_THRESHOLD;
 }
 
 export function stockPercent(currentKg, initialKg) {
-  if (!initialKg || initialKg <= 0) return 0;
-  return Math.min(100, Math.round((currentKg / initialKg) * 100));
+  const current = Number(currentKg) || 0;
+  const initial = Number(initialKg) || 0;
+  if (initial <= 0) return 0;
+  return Math.min(100, Math.max(0, Math.round((current / initial) * 100)));
 }

@@ -6,9 +6,9 @@ const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 // Validate that credentials are provided
 if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
-  console.error(
-    "Missing Supabase credentials. Please add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY to .env.local"
+  throw new Error(
+    "Missing Supabase credentials. Add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY to frontend/.env.local"
   );
 }
 
-export const supabase = createClient(SUPABASE_URL || "", SUPABASE_ANON_KEY || "");
+export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);

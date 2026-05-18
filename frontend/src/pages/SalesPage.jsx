@@ -30,6 +30,8 @@ export default function SalesPage() {
   const [loading, setLoading] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const [editingSale, setEditingSale] = useState(null);
+  const [invoiceModalOpen, setInvoiceModalOpen] = useState(false);
+  const [invoiceData, setInvoiceData] = useState(null);
 
   // Calculate totals
   const lineItemsWithTotals = useMemo(() => {
@@ -75,14 +77,24 @@ export default function SalesPage() {
   }
 
   function handleMaterialChange(id, materialId) {
-    const material = materials.find((m) => m.id === materialId);
+    const selectedId = materialId === "" ? "" : materialId;
+    const material = materials.find((m) => String(m.id) === String(selectedId));
 
-    updateLineItem(id, "materialId", materialId);
-    updateLineItem(id, "materialName", material?.name || "");
-
-    if (material && !useCustomRates[id]) {
-      updateLineItem(id, "ratePerKg", String(material.sellingPrice));
-    }
+    setLineItems((current) =>
+      current.map((item) =>
+        item.id === id
+          ? {
+              ...item,
+              materialId: selectedId,
+              materialName: material?.name || "",
+              ratePerKg:
+                material && !useCustomRates[id]
+                  ? String(material.sellingPrice)
+                  : item.ratePerKg,
+            }
+          : item
+      )
+    );
   }
 
   function resetForm() {
@@ -92,6 +104,72 @@ export default function SalesPage() {
     setUseCustomRates({});
     setEditingSale(null);
     setError("");
+  }
+
+  function openInvoiceForSale(sale) {
+    setInvoiceData({
+      invoiceNumber: sale.id,
+      date: sale.createdAt,
+      customerName: sale.customerName,
+      items: [
+        {
+          materialName: sale.materialName,
+          quantityKg: sale.quantityKg,
+          ratePerKg: sale.ratePerKg,
+          total: sale.totalAmount,
+        },
+      ],
+      totalAmount: sale.totalAmount,
+      paidAmount: sale.paidAmount,
+      dueAmount: sale.dueAmount,
+    });
+    setInvoiceModalOpen(true);
+  }
+
+  function openDraftInvoice() {
+    if (!customerName.trim()) {
+      setError("Customer name is required to preview invoice.");
+      return;
+    }
+
+    if (
+      lineItems.some(
+        (item) => !item.materialId || !item.quantityKg || !item.ratePerKg
+      )
+    ) {
+      setError(
+        "Please select material, quantity, and rate for all invoice items."
+      );
+      return;
+    }
+
+    const items = lineItems.map((item) => {
+      const selectedMaterial = materials.find(
+        (m) => String(m.id) === String(item.materialId)
+      );
+      return {
+        materialName:
+          item.materialName || selectedMaterial?.name || "",
+        quantityKg: Number(item.quantityKg),
+        ratePerKg: Number(item.ratePerKg),
+        total: calcSaleTotal(item.quantityKg, item.ratePerKg),
+      };
+    });
+
+    setInvoiceData({
+      invoiceNumber: `INV-${Date.now()}`,
+      date: new Date().toISOString(),
+      customerName,
+      items,
+      totalAmount: grandTotal,
+      paidAmount: Number(paidAmount) || 0,
+      dueAmount,
+    });
+    setInvoiceModalOpen(true);
+  }
+
+  function printInvoice() {
+    window.print();
   }
 
   function openEditSale(sale) {
@@ -140,6 +218,11 @@ export default function SalesPage() {
       return;
     }
 
+    if (Number(paidAmount) > grandTotal) {
+      setError("Paid amount cannot exceed total sale amount.");
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -157,10 +240,11 @@ export default function SalesPage() {
         setSuccess("Sale updated successfully.");
       } else {
         const salesData = lineItems.map((item) => {
+          const selectedMaterial = materials.find((m) => String(m.id) === String(item.materialId));
           return {
             customerName,
             materialId: item.materialId,
-            materialName: item.materialName,
+            materialName: selectedMaterial?.name || item.materialName || "",
             quantityKg: Number(item.quantityKg),
             ratePerKg: Number(item.ratePerKg),
           };
@@ -474,19 +558,31 @@ export default function SalesPage() {
             </div>
           </div>
 
-          <Button
-            type="submit"
-            className="w-full"
-            disabled={
-              loading || materials.length === 0
-            }
-          >
-            {loading
-              ? "Saving..."
-              : editingSale
-              ? "Update Sale"
-              : "Record Sale"}
-          </Button>
+          <div className="grid gap-3 sm:grid-cols-[1fr_auto]">
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={openDraftInvoice}
+              className="w-full"
+              disabled={materials.length === 0}
+            >
+              Preview Invoice
+            </Button>
+
+            <Button
+              type="submit"
+              className="w-full"
+              disabled={
+                loading || materials.length === 0
+              }
+            >
+              {loading
+                ? "Saving..."
+                : editingSale
+                ? "Update Sale"
+                : "Record Sale"}
+            </Button>
+          </div>
         </form>
       </div>
 
@@ -570,6 +666,14 @@ export default function SalesPage() {
 
                       <button
                         type="button"
+                        onClick={() => openInvoiceForSale(sale)}
+                        className="mr-2 rounded-lg p-2 text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
+                      >
+                        Invoice
+                      </button>
+
+                      <button
+                        type="button"
                         onClick={async () => {
                           if (
                             !window.confirm(
@@ -639,6 +743,129 @@ export default function SalesPage() {
               : "Update Sale"}
           </Button>
         </form>
+      </Modal>
+
+      <Modal
+        open={invoiceModalOpen}
+        onClose={() => setInvoiceModalOpen(false)}
+        title="Invoice Preview"
+        size="lg"
+      >
+        {invoiceData ? (
+          <div className="invoice-print space-y-6">
+            <div className="rounded-3xl border border-slate-200 p-6 dark:border-slate-700 dark:bg-slate-950/80 bg-slate-50">
+              <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <p className="text-sm uppercase tracking-[0.25em] text-brand-700 dark:text-brand-300">
+                    Jay Durge Traders
+                  </p>
+                  <p className="text-lg font-bold text-slate-900 dark:text-white">
+                    Sales Invoice
+                  </p>
+                  <p className="text-sm text-slate-500 dark:text-slate-400">
+                    9852670480 / 9804947949
+                  </p>
+                </div>
+
+                <div className="rounded-3xl bg-white p-4 shadow-sm dark:bg-slate-900">
+                  <p className="text-xs uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">
+                    Invoice No.
+                  </p>
+                  <p className="text-sm font-semibold text-slate-900 dark:text-white">
+                    {invoiceData.invoiceNumber}
+                  </p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
+                    {formatDateTime(invoiceData.date)}
+                  </p>
+                </div>
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div>
+                  <p className="text-xs uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">
+                    Bill To
+                  </p>
+                  <p className="mt-1 font-semibold text-slate-900 dark:text-white">
+                    {invoiceData.customerName}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">
+                    Payment Summary
+                  </p>
+                  <p className="mt-1 text-sm text-slate-700 dark:text-slate-300">
+                    Total: {formatCurrency(invoiceData.totalAmount)}
+                  </p>
+                  <p className="text-sm text-slate-700 dark:text-slate-300">
+                    Paid: {formatCurrency(invoiceData.paidAmount)}
+                  </p>
+                  <p className="text-sm text-slate-700 dark:text-slate-300">
+                    Due: {formatCurrency(invoiceData.dueAmount)}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="rounded-3xl border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-900">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-sm">
+                  <thead>
+                    <tr className="border-b border-slate-200 dark:border-slate-700">
+                      <th className="py-3 text-slate-500">Material</th>
+                      <th className="py-3 text-slate-500">Qty (KG)</th>
+                      <th className="py-3 text-slate-500">Rate/KG</th>
+                      <th className="py-3 text-slate-500">Amount</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {invoiceData.items.map((item, index) => (
+                      <tr key={index} className="border-b border-slate-100 dark:border-slate-800">
+                        <td className="py-3 text-slate-700 dark:text-slate-200">
+                          {item.materialName}
+                        </td>
+                        <td className="py-3 text-slate-700 dark:text-slate-200">
+                          {item.quantityKg}
+                        </td>
+                        <td className="py-3 text-slate-700 dark:text-slate-200">
+                          {formatCurrency(item.ratePerKg)}
+                        </td>
+                        <td className="py-3 text-slate-700 dark:text-slate-200">
+                          {formatCurrency(item.total)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-3 rounded-3xl border border-slate-200 bg-slate-50 p-5 dark:border-slate-700 dark:bg-slate-950">
+              <p className="text-sm text-slate-600 dark:text-slate-400">
+                This invoice can be printed or saved as PDF using your browser’s print dialog.
+              </p>
+            </div>
+
+            <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={() => setInvoiceModalOpen(false)}
+                className="w-full sm:w-auto"
+              >
+                Close
+              </Button>
+              <Button
+                type="button"
+                onClick={printInvoice}
+                className="w-full sm:w-auto"
+              >
+                Print / Save PDF
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <p>No invoice data available.</p>
+        )}
       </Modal>
     </div>
   );

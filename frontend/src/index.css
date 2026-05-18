@@ -77,3 +77,22 @@
     @apply transition-colors hover:bg-slate-50/80 dark:hover:bg-slate-800/40;
   }
 }
+
+@media print {
+  body * {
+    visibility: hidden !important;
+  }
+  .invoice-print,
+  .invoice-print * {
+    visibility: visible !important;
+  }
+  .invoice-print {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+  }
+  .invoice-print .hidden-print {
+    display: none !important;
+  }
+}

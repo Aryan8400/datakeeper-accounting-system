@@ -7,7 +7,7 @@ export const BUSINESS = {
   type: "Jasta Patta — Metal Sheet Business",
 };
 
-export const LOW_STOCK_THRESHOLD = 0.5; // warn when stock falls below 50% of initial
+export const LOW_STOCK_THRESHOLD = 0.3; // warn when stock falls below 30% of initial
 
 export const NAV_ITEMS = [
   { path: "/dashboard", label: "Dashboard", icon: "dashboard" },

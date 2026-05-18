@@ -26,7 +26,7 @@ export default function DashboardPage() {
 
       {lowStock.length > 0 && (
         <Alert variant="warning" className="mb-6">
-          <strong>Low stock alert:</strong> {lowStock.length} material(s) below 50% of initial stock.{" "}
+          <strong>Low stock alert:</strong> {lowStock.length} material(s) below 30% of initial stock.{" "}
           <Link to="/stock" className="font-semibold underline">
             View stock
           </Link>
@@ -65,7 +65,7 @@ export default function DashboardPage() {
         <StatCard
           title="Low Stock"
           value={stats.lowStockCount}
-          subtitle="Below 50% threshold"
+          subtitle="Below 30% threshold"
           variant="red"
           icon={<span className="text-lg">⚠️</span>}
         />

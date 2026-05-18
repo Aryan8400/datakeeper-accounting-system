@@ -237,6 +237,9 @@ export function DataProvider({ children }) {
         const rate = Number(ratePerKg);
         const totalAmount = calcSaleTotal(qty, rate);
         const paid = Number(paidAmount) || 0;
+        if (paid > totalAmount) {
+          throw new Error("Paid amount cannot exceed total sale amount.");
+        }
         const dueAmount = calcDueAmount(totalAmount, paid);
 
         const sale = await addSale({
@@ -251,6 +254,11 @@ export function DataProvider({ children }) {
           dueAmount,
         });
 
+        // Persist stock decrement in the database
+        await updateMaterial(materialId, user.id, {
+          stockKg: material.stock_kg - qty,
+        });
+
         // Immediately update state for instant feedback
         setSales((prev) => [sale, ...prev]);
         setMaterials((prev) =>
@@ -258,18 +266,16 @@ export function DataProvider({ children }) {
         );
 
         // Refresh from server to ensure consistency
-        setTimeout(async () => {
-          try {
-            const [updatedMaterials, updatedSales] = await Promise.all([
-              getMaterials(user.id),
-              getSales(user.id),
-            ]);
-            setMaterials(updatedMaterials);
-            setSales(updatedSales);
-          } catch (err) {
-            console.error("Failed to refresh data after adding sale:", err);
-          }
-        }, 500);
+        try {
+          const [updatedMaterials, updatedSales] = await Promise.all([
+            getMaterials(user.id),
+            getSales(user.id),
+          ]);
+          setMaterials(updatedMaterials);
+          setSales(updatedSales);
+        } catch (err) {
+          console.error("Failed to refresh data after adding sale:", err);
+        }
 
         return sale;
       } catch (err) {
@@ -312,11 +318,32 @@ export function DataProvider({ children }) {
 
         // Calculate grand total
         const grandTotal = salesWithTotals.reduce((sum, s) => sum + s.totalAmount, 0);
-        const dueAmount = calcDueAmount(grandTotal, paidAmount);
+        const totalPaid = Number(paidAmount) || 0;
+        if (totalPaid > grandTotal) {
+          throw new Error("Paid amount cannot exceed total sale amount.");
+        }
+        const dueAmount = calcDueAmount(grandTotal, totalPaid);
 
-        // Create all sales
+        // Assign paid amount to each item proportionally, then create all sales
+        const salesWithPayment = salesWithTotals.map((item) => {
+          const share = grandTotal > 0 ? item.totalAmount / grandTotal : 0;
+          return {
+            ...item,
+            paidAmount: Number((totalPaid * share).toFixed(2)),
+          };
+        });
+        const paymentRemainder = totalPaid - salesWithPayment.reduce((sum, item) => sum + item.paidAmount, 0);
+        if (salesWithPayment.length > 0 && paymentRemainder !== 0) {
+          salesWithPayment[salesWithPayment.length - 1].paidAmount += paymentRemainder;
+        }
+
         const createdSales = [];
-        for (const item of salesWithTotals) {
+        // Track changes per material so DB updates are batched after creation
+        const stockUpdates = new Map();
+
+        for (const item of salesWithPayment) {
+          const salePaid = item.paidAmount;
+          const saleDue = calcDueAmount(item.totalAmount, salePaid);
           const sale = await addSale({
             userId: user.id,
             customerName: item.customerName,
@@ -325,13 +352,28 @@ export function DataProvider({ children }) {
             quantityKg: item.quantityKg,
             ratePerKg: item.ratePerKg,
             totalAmount: item.totalAmount,
-            paidAmount: 0,
-            dueAmount: 0,
+            paidAmount: salePaid,
+            dueAmount: saleDue,
           });
           createdSales.push(sale);
+
+          stockUpdates.set(
+            item.materialId,
+            (stockUpdates.get(item.materialId) || 0) + item.quantityKg
+          );
         }
 
-        // Update materials stock
+        // Update materials stock in the database
+        for (const [materialId, qtySold] of stockUpdates.entries()) {
+          const material = materials.find((m) => m.id === materialId);
+          if (material) {
+            await updateMaterial(materialId, user.id, {
+              stockKg: material.stock_kg - qtySold,
+            });
+          }
+        }
+
+        // Update materials stock locally
         let updatedMaterials = [...materials];
         for (const item of salesWithTotals) {
           updatedMaterials = updatedMaterials.map((m) =>
@@ -344,18 +386,16 @@ export function DataProvider({ children }) {
         setMaterials(updatedMaterials);
 
         // Refresh from server to ensure consistency
-        setTimeout(async () => {
-          try {
-            const [newMaterials, newSales] = await Promise.all([
-              getMaterials(user.id),
-              getSales(user.id),
-            ]);
-            setMaterials(newMaterials);
-            setSales(newSales);
-          } catch (err) {
-            console.error("Failed to refresh data after adding multiple sales:", err);
-          }
-        }, 500);
+        try {
+          const [newMaterials, newSales] = await Promise.all([
+            getMaterials(user.id),
+            getSales(user.id),
+          ]);
+          setMaterials(newMaterials);
+          setSales(newSales);
+        } catch (err) {
+          console.error("Failed to refresh data after adding multiple sales:", err);
+        }
 
         return createdSales;
       } catch (err) {
@@ -383,6 +423,9 @@ export function DataProvider({ children }) {
         const rate = updates.ratePerKg !== undefined ? Number(updates.ratePerKg) : sale.rate_per_kg;
         const paid = updates.paidAmount !== undefined ? Number(updates.paidAmount) : sale.paid_amount;
         const totalAmount = calcSaleTotal(qty, rate);
+        if (paid > totalAmount) {
+          throw new Error("Paid amount cannot exceed total sale amount.");
+        }
         const dueAmount = calcDueAmount(totalAmount, paid);
 
         if (oldMaterial?.id === newMaterial.id) {
@@ -449,18 +492,16 @@ export function DataProvider({ children }) {
         });
 
         // Refresh from server to ensure consistency
-        setTimeout(async () => {
-          try {
-            const [updatedMaterials, updatedSales] = await Promise.all([
-              getMaterials(user.id),
-              getSales(user.id),
-            ]);
-            setMaterials(updatedMaterials);
-            setSales(updatedSales);
-          } catch (err) {
-            console.error("Failed to refresh data after updating sale:", err);
-          }
-        }, 500);
+        try {
+          const [updatedMaterials, updatedSales] = await Promise.all([
+            getMaterials(user.id),
+            getSales(user.id),
+          ]);
+          setMaterials(updatedMaterials);
+          setSales(updatedSales);
+        } catch (err) {
+          console.error("Failed to refresh data after updating sale:", err);
+        }
       } catch (err) {
         throw new Error(err.message || "Failed to update sale");
       }
@@ -488,18 +529,16 @@ export function DataProvider({ children }) {
         await deleteSale(id, user.id);
 
         // Refresh from server to ensure consistency
-        setTimeout(async () => {
-          try {
-            const [updatedMaterials, updatedSales] = await Promise.all([
-              getMaterials(user.id),
-              getSales(user.id),
-            ]);
-            setMaterials(updatedMaterials);
-            setSales(updatedSales);
-          } catch (err) {
-            console.error("Failed to refresh data after deleting sale:", err);
-          }
-        }, 500);
+        try {
+          const [updatedMaterials, updatedSales] = await Promise.all([
+            getMaterials(user.id),
+            getSales(user.id),
+          ]);
+          setMaterials(updatedMaterials);
+          setSales(updatedSales);
+        } catch (err) {
+          console.error("Failed to refresh data after deleting sale:", err);
+        }
       } catch (err) {
         throw new Error(err.message || "Failed to delete sale");
       }

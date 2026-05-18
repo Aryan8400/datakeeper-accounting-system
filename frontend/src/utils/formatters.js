@@ -27,19 +27,23 @@ export function formatNumber(value, decimals = 0) {
 }
 
 export function formatDate(date) {
+  const parsed = new Date(date);
+  if (Number.isNaN(parsed.getTime())) return "";
   return new Intl.DateTimeFormat("en-NP", {
     day: "2-digit",
     month: "short",
     year: "numeric",
-  }).format(new Date(date));
+  }).format(parsed);
 }
 
 export function formatDateTime(date) {
+  const parsed = new Date(date);
+  if (Number.isNaN(parsed.getTime())) return "";
   return new Intl.DateTimeFormat("en-NP", {
     day: "2-digit",
     month: "short",
     year: "numeric",
     hour: "2-digit",
     minute: "2-digit",
-  }).format(new Date(date));
+  }).format(parsed);
 }

@@ -89,7 +89,7 @@ export default function StockPage() {
 
       {lowStockCount > 0 && (
         <Alert variant="warning" className="mb-6">
-          <strong>{lowStockCount} material(s)</strong> are below 50% of initial stock. Restock soon to avoid shortages.
+          <strong>{lowStockCount} material(s)</strong> are below 30% of initial stock. Restock soon to avoid shortages.
         </Alert>
       )}
 

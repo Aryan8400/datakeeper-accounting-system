@@ -66,11 +66,23 @@ export default function SalesPage() {
   }
 
   function handleMaterialChange(id, materialId) {
-    const mat = materials.find((m) => m.id === materialId);
-    updateLineItem(id, "materialId", materialId);
-    if (mat && !useCustomRates[id]) {
-      updateLineItem(id, "ratePerKg", String(mat.sellingPrice));
-    }
+    const selectedId = materialId === "" ? "" : materialId;
+    const mat = materials.find((m) => String(m.id) === String(selectedId));
+    setLineItems((current) =>
+      current.map((item) =>
+        item.id === id
+          ? {
+              ...item,
+              materialId: selectedId,
+              materialName: mat?.name || "",
+              ratePerKg:
+                mat && !useCustomRates[id]
+                  ? String(mat.sellingPrice)
+                  : item.ratePerKg,
+            }
+          : item
+      )
+    );
   }
 
   function resetForm() {
@@ -115,6 +127,11 @@ export default function SalesPage() {
       return;
     }
 
+    if (Number(paidAmount) > grandTotal) {
+      setError("Paid amount cannot exceed total sale amount.");
+      return;
+    }
+
     setLoading(true);
     try {
       if (editingSale) {
@@ -131,11 +148,11 @@ export default function SalesPage() {
       } else {
         // Add mode: create multiple sales if multiple items
         const salesData = lineItems.map((item) => {
-          const mat = materials.find((m) => m.id === item.materialId);
+          const mat = materials.find((m) => String(m.id) === String(item.materialId));
           return {
             customerName,
             materialId: item.materialId,
-            materialName: mat.name,
+            materialName: mat?.name || item.materialName || "",
             quantityKg: Number(item.quantityKg),
             ratePerKg: Number(item.ratePerKg),
           };
