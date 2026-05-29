@@ -179,7 +179,7 @@ export default function SalesPage() {
         subtitle="Record sales with multiple items per customer — each customer can buy various materials"
       />
 
-      <div className="mx-auto max-w-4xl">
+      <div className="mx-auto w-full max-w-4xl px-4 sm:px-0">
         {materials.length === 0 && (
           <Alert variant="warning" className="mb-6">
             Add materials in Stock Management before recording sales.
@@ -216,7 +216,7 @@ export default function SalesPage() {
                   key={item.id}
                   className="space-y-3 rounded-lg border border-slate-200 p-4 dark:border-slate-700"
                 >
-                  <div className="grid gap-4 sm:grid-cols-3">
+                  <div className="grid gap-4 grid-cols-1 sm:grid-cols-3">
                     <div>
                       <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-2">
                         Material
@@ -295,7 +295,7 @@ export default function SalesPage() {
                     </div>
                   </div>
 
-                  <div className="flex items-end justify-between">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
                     <div className="rounded-lg bg-slate-50 px-3 py-2 dark:bg-slate-800">
                       <p className="text-xs text-slate-500">Subtotal</p>
                       <p className="font-semibold text-slate-900 dark:text-white">
@@ -346,7 +346,7 @@ export default function SalesPage() {
             <p className="text-xs font-semibold uppercase tracking-wider text-brand-700 dark:text-brand-300">
               Invoice Summary
             </p>
-            <div className="grid gap-4 sm:grid-cols-3">
+            <div className="grid gap-4 grid-cols-1 sm:grid-cols-3">
               <div>
                 <p className="text-xs text-brand-600 dark:text-brand-400">Grand Total</p>
                 <p className="text-2xl font-bold text-slate-900 dark:text-white">{formatCurrency(grandTotal)}</p>

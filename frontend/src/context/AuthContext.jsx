@@ -1,10 +1,12 @@
 import { createContext, useContext, useState, useEffect, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import { signIn, signUp, signOut, getCurrentSession } from "../services/supabaseService.js";
 import { supabase } from "../lib/supabaseClient.js";
 
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
+  const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -110,10 +112,11 @@ export function AuthProvider({ children }) {
     try {
       await signOut();
       setUser(null);
+      navigate("/login", { replace: true });
     } catch (err) {
       console.error("Logout error:", err);
     }
-  }, []);
+  }, [navigate]);
 
   return (
     <AuthContext.Provider value={{ user, loading, login, signup, logout, isAuthenticated: !!user }}>
