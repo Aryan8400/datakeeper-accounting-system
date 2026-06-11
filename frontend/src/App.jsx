@@ -23,6 +23,9 @@ function PublicOnly({ children }) {
 }
 
 export default function App() {
+  const { isAuthenticated } = useAuth();
+  const fallbackPath = isAuthenticated ? "/dashboard" : "/login";
+
   return (
     <Routes>
       <Route path="/" element={<Navigate to="/login" replace />} />
@@ -53,7 +56,7 @@ export default function App() {
         </Route>
       </Route>
 
-      <Route path="*" element={<Navigate to="/login" replace />} />
+      <Route path="*" element={<Navigate to={fallbackPath} replace />} />
     </Routes>
   );
 }
