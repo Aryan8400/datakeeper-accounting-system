@@ -3,6 +3,8 @@ import ProtectedRoute from "./components/ProtectedRoute.jsx";
 import DashboardLayout from "./layouts/DashboardLayout.jsx";
 import LoginPage from "./pages/LoginPage.jsx";
 import SignupPage from "./pages/SignupPage.jsx";
+import VerifyEmailPage from "./pages/VerifyEmailPage.jsx";
+import ConfirmEmailPage from "./pages/ConfirmEmailPage.jsx";
 import DashboardPage from "./pages/DashboardPage.jsx";
 import StockPage from "./pages/StockPage.jsx";
 import SalesPage from "./pages/SalesPage.jsx";
@@ -44,6 +46,20 @@ export default function App() {
           <PublicOnly>
             <SignupPage />
           </PublicOnly>
+        }
+      />
+      <Route
+        path="/verify-email"
+        element={
+          <PublicOnly>
+            <VerifyEmailPage />
+          </PublicOnly>
+        }
+      />
+      <Route
+        path="/confirm-email"
+        element={
+          <ConfirmEmailPage />
         }
       />
 

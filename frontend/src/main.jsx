@@ -7,6 +7,12 @@ import { DataProvider } from "./context/DataContext.jsx";
 import App from "./App.jsx";
 import "./index.css";
 
+const currentHash = window.location.hash;
+const currentPath = window.location.pathname + window.location.search;
+if (!currentHash && currentPath !== "/") {
+  window.location.replace(`${window.location.origin}/#${currentPath}`);
+}
+
 createRoot(document.getElementById("root")).render(
   <StrictMode>
     <HashRouter>

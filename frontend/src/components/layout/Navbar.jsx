@@ -1,6 +1,7 @@
 import { useAuth } from "../../hooks/useAuth.js";
 import { useTheme } from "../../hooks/useTheme.js";
 import { BUSINESS } from "../../utils/constants.js";
+import logo from "../../assets/logo_datakeeper.png";
 
 export default function Navbar({ onMenuClick }) {
   const { user, logout } = useAuth();
@@ -19,6 +20,11 @@ export default function Navbar({ onMenuClick }) {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
           </svg>
         </button>
+        <img
+          src={logo}
+          alt="DataKeeper logo"
+          className="h-12 w-12 md:h-16 md:w-16 object-contain"
+        />
         <div className="hidden sm:block">
           <p className="text-sm font-semibold text-slate-900 dark:text-white">{BUSINESS.name}</p>
           <p className="text-xs text-slate-500">{BUSINESS.tagline}</p>

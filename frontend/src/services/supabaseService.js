@@ -1,4 +1,4 @@
-import { supabase } from "../lib/supabaseClient.js";
+import { supabase, appUrl } from "../lib/supabaseClient.js";
 
 // ============================================================================
 // AUTHENTICATION SERVICES
@@ -9,10 +9,22 @@ export async function signUp({ email, password, name }) {
     email,
     password,
     options: {
-      emailRedirectTo: `${window.location.origin}/login`,
+      emailRedirectTo: `${appUrl}/#/confirm-email`,
       data: {
         name,
       },
+    },
+  });
+
+  if (error) throw new Error(error.message);
+  return data;
+}
+
+export async function signInWithGoogle() {
+  const { data, error } = await supabase.auth.signInWithOAuth({
+    provider: "google",
+    options: {
+      redirectTo: `${appUrl}/#/login`,
     },
   });
 
@@ -28,6 +40,19 @@ export async function signIn(email, password) {
 
   if (error) throw new Error(error.message);
   return data;
+}
+
+export async function resendConfirmationEmail(email) {
+  const { error } = await supabase.auth.resend({
+    type: "signup",
+    email,
+    options: {
+      emailRedirectTo: `${appUrl}/#/confirm-email`,
+    },
+  });
+
+  if (error) throw new Error(error.message);
+  return { success: true };
 }
 
 export async function signOut() {

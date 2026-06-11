@@ -29,6 +29,7 @@ export default function LoginPage() {
     }
   }
 
+
   return (
     <AuthLayout title="Welcome back" subtitle="Sign in to manage Jay Durge Traders">
       <form onSubmit={handleSubmit} className="space-y-5">
@@ -61,9 +62,6 @@ export default function LoginPage() {
           {loading ? "Signing in…" : "Sign in"}
         </Button>
       </form>
-      <p className="rounded-xl bg-slate-100 px-3 py-2 text-center text-xs text-slate-600 dark:bg-slate-800 dark:text-slate-400">
-        Demo: demo@jaydurgetraders.com / demo123
-      </p>
       <p className="mt-6 text-center text-sm text-slate-500">
         Don&apos;t have an account?{" "}
         <Link to="/signup" className="font-semibold text-brand-600 hover:underline dark:text-brand-400">

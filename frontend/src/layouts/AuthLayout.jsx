@@ -1,4 +1,5 @@
 import { BUSINESS } from "../utils/constants.js";
+import logo from "../assets/logo_datakeeper.png";
 
 /** Shared layout for login & signup pages */
 export default function AuthLayout({ children, title, subtitle }) {
@@ -15,9 +16,11 @@ export default function AuthLayout({ children, title, subtitle }) {
         />
         <div className="relative z-10">
           <div className="flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-brand-500 font-bold text-white shadow-glow">
-              DK
-            </div>
+            <img
+              src={logo}
+              alt="DataKeeper logo"
+              className="h-20 w-20 md:h-24 md:w-24 object-contain shadow-sm"
+            />
             <div>
               <p className="text-lg font-bold text-white">{BUSINESS.appName}</p>
               <p className="text-xs text-brand-300">{BUSINESS.name}</p>

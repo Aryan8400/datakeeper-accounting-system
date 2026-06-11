@@ -10,6 +10,7 @@ export default function SignupPage() {
   const { signup } = useAuth();
   const [form, setForm] = useState({ name: "", email: "", password: "", confirmPassword: "" });
   const [error, setError] = useState("");
+  const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
 
   function update(field) {
@@ -29,11 +30,11 @@ export default function SignupPage() {
     }
     setLoading(true);
     try {
-      const userData = await signup({ name: form.name, email: form.email, password: form.password });
-      if (userData) {
+      const data = await signup({ name: form.name, email: form.email, password: form.password });
+      if (data?.session?.user) {
         navigate("/dashboard");
       } else {
-        setError("A confirmation email has been sent. Please check your inbox and follow the link to complete registration.");
+        navigate("/verify-email", { state: { email: form.email } });
       }
     } catch (err) {
       setError(err.message);
@@ -48,6 +49,11 @@ export default function SignupPage() {
         {error && (
           <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900 dark:bg-red-950/50 dark:text-red-300">
             {error}
+          </div>
+        )}
+        {message && (
+          <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950/50 dark:text-emerald-300">
+            {message}
           </div>
         )}
         <Input label="Full Name" id="name" value={form.name} onChange={update("name")} placeholder="Your full name" required />

@@ -1,6 +1,7 @@
 import { NavLink } from "react-router-dom";
 import { BUSINESS, NAV_ITEMS } from "../../utils/constants.js";
 import NavIcon from "./NavIcon.jsx";
+import logo from "../../assets/logo_datakeeper.png";
 
 export default function Sidebar({ open, onClose }) {
   return (
@@ -20,9 +21,11 @@ export default function Sidebar({ open, onClose }) {
         }`}
       >
         <div className="flex h-16 items-center gap-3 border-b border-slate-100 px-5 dark:border-slate-800">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-brand-500 to-brand-700 text-white shadow-glow">
-            <span className="text-sm font-bold">DK</span>
-          </div>
+          <img
+            src={logo}
+            alt="DataKeeper logo"
+            className="h-16 w-16 md:h-20 md:w-20 object-contain shadow-sm"
+          />
           <div className="min-w-0">
             <p className="truncate text-sm font-bold text-slate-900 dark:text-white">{BUSINESS.appName}</p>
             <p className="truncate text-xs text-slate-500">{BUSINESS.name}</p>

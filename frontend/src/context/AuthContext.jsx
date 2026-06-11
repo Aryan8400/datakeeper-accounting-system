@@ -93,20 +93,21 @@ export function AuthProvider({ children }) {
 
   const signup = useCallback(async ({ name, email, password }) => {
     try {
-      const { user: newUser } = await signUp({ email, password, name });
-      if (newUser) {
+      const data = await signUp({ email, password, name });
+      if (data?.session?.user) {
         const userData = {
-          id: newUser.id,
-          name: name,
-          email: email,
+          id: data.session.user.id,
+          name: data.session.user.user_metadata?.name || data.session.user.email,
+          email: data.session.user.email,
         };
         setUser(userData);
-        return userData;
       }
+      return data;
     } catch (err) {
       throw new Error(err.message || "Failed to create account.");
     }
   }, []);
+
 
   const logout = useCallback(async () => {
     try {
